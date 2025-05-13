@@ -1,0 +1,128 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: irsa-mutation-webhook
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: irsa-mutation-webhook
+  namespace: irsa-mutation-webhook
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: irsa-mutation-webhook
+rules:
+- apiGroups: [""]
+  resources: ["serviceaccounts"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: irsa-mutation-webhook
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: irsa-mutation-webhook
+subjects:
+- kind: ServiceAccount
+  name: irsa-mutation-webhook
+  namespace: irsa-mutation-webhook
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: irsa-mutation-webhook
+  namespace: irsa-mutation-webhook
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: irsa-mutation-webhook
+  template:
+    metadata:
+      labels:
+        app: irsa-mutation-webhook
+    spec:
+      serviceAccountName: irsa-mutation-webhook
+      containers:
+      - name: irsa-mutation-webhook
+        image: <your-docker-hub-username>/irsa-mutation-webhook:v1.0.0
+        imagePullPolicy: Always
+        args:
+        - --port=8443
+        ports:
+        - containerPort: 8443
+        volumeMounts:
+        - name: webhook-tls
+          mountPath: /etc/webhook/certs
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+        env:
+        - name: RESOURCE_REQUESTS_CPU
+          value: "100m"
+        - name: RESOURCE_REQUESTS_MEMORY
+          value: "128Mi"
+        - name: RESOURCE_LIMITS_CPU
+          value: "200m"
+        - name: RESOURCE_LIMITS_MEMORY
+          value: "256Mi"
+      volumes:
+      - name: webhook-tls
+        secret:
+          secretName: irsa-mutation-webhook
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: irsa-mutation-webhook
+  namespace: irsa-mutation-webhook
+spec:
+  ports:
+  - port: 443
+    targetPort: 8443
+  selector:
+    app: irsa-mutation-webhook
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: irsa-mutation-webhook
+  annotations:
+    cert-manager.io/inject-ca-from: irsa-mutation-webhook/irsa-mutation-webhook
+webhooks:
+- name: irsa-mutation-webhook.kubevirt.io
+  clientConfig:
+    service:
+      name: irsa-mutation-webhook
+      namespace: irsa-mutation-webhook
+      path: "/mutate"
+      port: 443
+  rules:
+  - apiGroups: [""]
+    apiVersions: ["v1"]
+    resources: ["pods"]
+    operations: ["CREATE"]
+  namespaceSelector:
+    matchExpressions:
+    - key: kubernetes.io/metadata.name
+      operator: NotIn
+      values: ["irsa-mutation-webhook"]
+  objectSelector:
+    matchLabels:
+      kubevirt.io: "virt-launcher"
+  failurePolicy: Ignore
+  sideEffects: None
+  admissionReviewVersions: ["v1"] 

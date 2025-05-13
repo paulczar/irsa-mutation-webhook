@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: irsa-mutation-webhook
+  labels:
+    ethos.adobe.net/namespace.type: admin
+---
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: irsa-mutation-webhook
+  namespace: irsa-mutation-webhook
+spec:
+  selfSigned: {}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: irsa-mutation-webhook
+  namespace: irsa-mutation-webhook
+spec:
+  commonName: irsa-mutation-webhook
+  dnsNames:
+  - irsa-mutation-webhook.irsa-mutation-webhook
+  - irsa-mutation-webhook.irsa-mutation-webhook.svc
+  - irsa-mutation-webhook.irsa-mutation-webhook.svc.cluster
+  - irsa-mutation-webhook.irsa-mutation-webhook.svc.cluster.local
+  duration: 2160h0m0s
+  issuerRef:
+    name: irsa-mutation-webhook
+  privateKey:
+    algorithm: RSA
+    rotationPolicy: Always
+    size: 2048
+  renewBefore: 720h0m0s
+  secretName: irsa-mutation-webhook
+  subject:
+    organizations:
+    - ethos
