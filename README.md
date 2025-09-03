@@ -58,6 +58,23 @@ make push
 make deploy
 ```
 
+### Installation on OpenShift
+
+1. Deploy to OpenShift:
+```bash
+make deploy-openshift
+```
+
+2. Build the image from your local source:
+```bash
+make build-openshift
+```
+
+3. To remove the deployment from OpenShift:
+```bash
+make delete-openshift
+```
+
 ## Configuration
 
 The webhook can be configured through environment variables:
@@ -85,7 +102,8 @@ To enable IRSA for KubeVirt workloads:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: example-sa
+  name: irsa-example-sa
+  namespace: irsa-example-vm
   annotations:
     eks.amazonaws.com/role-arn: "arn:aws:iam::ACCOUNT_ID:role/kubevirt-role"
 ```
@@ -169,6 +187,15 @@ make push
 
 # Deploy webhook to Kubernetes
 make deploy
+
+# Deploy webhook to OpenShift
+make deploy-openshift
+
+# Build webhook on OpenShift from local source
+make build-openshift
+
+# Delete webhook from OpenShift
+make delete-openshift
 
 # Format code
 make fmt

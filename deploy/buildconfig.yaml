@@ -1,0 +1,22 @@
+apiVersion: build.openshift.io/v1
+kind: BuildConfig
+metadata:
+  name: irsa-mutation-webhook
+  namespace: irsa-mutation-webhook
+  labels:
+    app: irsa-mutation-webhook
+spec:
+  output:
+    to:
+      kind: ImageStreamTag
+      name: irsa-mutation-webhook:latest
+  source:
+    type: Binary
+  strategy:
+    dockerStrategy:
+      dockerfilePath: Dockerfile
+    type: Docker
+  triggers:
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange

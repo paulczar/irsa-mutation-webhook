@@ -53,7 +53,7 @@ spec:
       serviceAccountName: irsa-mutation-webhook
       containers:
       - name: irsa-mutation-webhook
-        image: <your-docker-hub-username>/irsa-mutation-webhook:v1.0.0
+        image: image-registry.openshift-image-registry.svc:5000/irsa-mutation-webhook/irsa-mutation-webhook:latest
         imagePullPolicy: Always
         args:
         - --port=8443
@@ -125,4 +125,4 @@ webhooks:
       kubevirt.io: "virt-launcher"
   failurePolicy: Ignore
   sideEffects: None
-  admissionReviewVersions: ["v1"] 
+  admissionReviewVersions: ["v1"]
